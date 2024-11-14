@@ -42,10 +42,14 @@ class TokenLifecycle(Job):
         tokens = Token.objects.all()
         token_list = []
         is_valid = True
+        ct = dt.datetime.now(dt.timezone.utc)
         for t in tokens:
             if t.is_expired:
                 is_valid = False
-            if t.created.day < 15 and not self.token_exception(t):
+            if not t.expires:
+                if t.created.day < dt.datetime.now(dt.timezone.utc).day and not self.token_exception(t):
+                    is_valid = False
+            if (t.expires - ct).total_seconds() > 86400:
                 is_valid = False
             if not is_valid:
                 token_list.append({"t_user": t.user.username, "t_created": t.created.strftime("%Y-%m-%d %H:%M:%S UTC"), "t_id": t.id, "t_is_expired": t.is_expired, "t_key": t.key })
